@@ -59,6 +59,25 @@ $userName = $_SESSION['user_name']  ?? null;
                             </a>
                         </li>
                     <?php elseif ($userType === 'lecturer'): ?>
+                        <?php
+                            // Resolve the lecturer's first allocation so the Roster
+                            // link always carries a valid allocation_id.
+                            $navAllocId = 0;
+                            try {
+                                $navDb = get_db();
+                                $navStmt = $navDb->prepare(
+                                    'SELECT id FROM course_allocations
+                                     WHERE lecturer_id = :lecturer ORDER BY id ASC LIMIT 1'
+                                );
+                                $navStmt->execute([':lecturer' => (int) $_SESSION['user_id']]);
+                                $navAllocId = (int) ($navStmt->fetchColumn() ?: 0);
+                            } catch (Throwable $e) {
+                                $navAllocId = 0;
+                            }
+                            $rosterHref = $navAllocId > 0
+                                ? APP_URL . '/portals/lecturer/roster.php?allocation_id=' . $navAllocId
+                                : APP_URL . '/portals/lecturer/dashboard.php';
+                        ?>
                         <li class="nav-item">
                             <a class="nav-link text-white" href="<?= APP_URL ?>/portals/lecturer/dashboard.php">
                                 <i class="bi bi-speedometer2 me-1"></i>Dashboard
@@ -70,7 +89,7 @@ $userName = $_SESSION['user_name']  ?? null;
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="<?= APP_URL ?>/portals/lecturer/roster.php">
+                            <a class="nav-link text-white" href="<?= sanitize_input($rosterHref) ?>">
                                 <i class="bi bi-clipboard-check me-1"></i>Roster
                             </a>
                         </li>

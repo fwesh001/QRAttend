@@ -60,6 +60,30 @@ try {
 } catch (PDOException $e) {
     error_log('[QRAttend] active sessions query error: ' . $e->getMessage());
 }
+
+// --- Recently ended sessions (CLOSED or expired) for this lecturer ----------
+$endedSessions = [];
+try {
+    $db = get_db();
+    $endStmt = $db->prepare(
+        'SELECT s.id AS session_id, s.course_allocation_id AS allocation_id, s.status,
+                s.expires_at, c.course_code, c.course_title,
+                (SELECT COUNT(*) FROM attendance_records ar WHERE ar.session_id = s.id) AS checked_in
+         FROM attendance_sessions s
+         JOIN course_allocations ca ON ca.id = s.course_allocation_id
+         JOIN courses c ON c.id = ca.course_id
+         WHERE ca.lecturer_id = :lecturer
+           AND (s.status = :closed OR s.expires_at <= NOW())
+         ORDER BY s.expires_at DESC
+         LIMIT 10'
+    );
+    $endStmt->execute([':lecturer' => (int) $_SESSION['user_id'], ':closed' => 'Closed']);
+    $endedSessions = $endStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (RuntimeException $e) {
+    // Non-fatal.
+} catch (PDOException $e) {
+    error_log('[QRAttend] ended sessions query error: ' . $e->getMessage());
+}
 ?>
 <main class="container py-4">
     <?= display_flash_message() ?>
@@ -166,6 +190,48 @@ try {
             </div>
         <?php endforeach; ?>
         <?php endif; ?>
+
+    <!-- Recently Ended Sessions (read-only) -->
+    <h2 class="h6 text-uppercase text-muted mb-3 mt-2">
+        <i class="bi bi-clock-history me-1" style="color:var(--brand-secondary);"></i>
+        Recently Ended Sessions
+    </h2>
+    <?php if (empty($endedSessions)): ?>
+        <div class="alert rounded-4 mb-2" role="alert"
+             style="background-color:var(--brand-surface); border:1px solid #e3e6e5;">
+            <i class="bi bi-info-circle me-1" style="color:var(--brand-secondary);"></i>
+            No ended sessions yet.
+        </div>
+    <?php else: ?>
+        <div class="row g-3">
+            <?php foreach ($endedSessions as $ended): ?>
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 bg-light">
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge text-white" style="background-color:var(--brand-danger);">
+                                    <i class="bi bi-x-circle-fill me-1"></i>ENDED
+                                </span>
+                                <span class="small text-muted">
+                                    <?= sanitize_input(date('M d, H:i', strtotime($ended['expires_at']))) ?>
+                                </span>
+                            </div>
+                            <h3 class="h6 fw-bold mb-1"><?= sanitize_input($ended['course_code']) ?></h3>
+                            <p class="small text-muted mb-2"><?= sanitize_input($ended['course_title']) ?></p>
+                            <div class="small">
+                                <i class="bi bi-people-fill me-1"></i>
+                                <?= (int) $ended['checked_in'] ?> student(s) checked in
+                            </div>
+                            <a href="roster.php?allocation_id=<?= (int) $ended['allocation_id'] ?>"
+                               class="btn btn-sm btn-outline-secondary w-100 fw-semibold mt-3">
+                                <i class="bi bi-clipboard-check me-1"></i> View Roster
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
 </main>
 
 <?php
