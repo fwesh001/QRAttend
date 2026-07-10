@@ -1,4 +1,4 @@
-﻿/* QRAttend :: html5-qrcode Camera Wrapper Engine
+/* QRAttend :: html5-qrcode Camera Wrapper Engine
  * ---------------------------------------------------------------------------
  * - Initializes the rear camera on mobile via Html5Qrcode
  * - On a successful scan: stops the camera, POSTs the token to the backend
@@ -11,7 +11,7 @@
     const root = document.getElementById('scanner-root');
     if (!root) return;
 
-    const endpoint = root.dataset.endpoint || '/app/handlers/attendance.php';
+    const endpoint = root.dataset.endpoint || '/handlers/attendance.php';
     const readerEl = document.getElementById('reader');
     const statusEl = document.getElementById('scan-status');
     const pinForm  = document.getElementById('pin-form');

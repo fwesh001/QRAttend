@@ -57,7 +57,7 @@ require_once __DIR__ . '/../../../app/layouts/navbar.php';
 ?>
 <main class="container-fluid py-4" id="session-root"
       data-allocation-id="<?= (int) $allocationId ?>"
-      data-poll-url="/app/handlers/session.php"
+      data-poll-url="<?= APP_URL ?>/handlers/session.php"
       data-api-base="<?= rtrim(APP_URL, '/') ?>">
 
     <?= display_flash_message() ?>

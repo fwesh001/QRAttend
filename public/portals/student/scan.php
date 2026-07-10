@@ -21,7 +21,7 @@ $pageTitle = INSTITUTION_SHORT . ' - Scan Attendance';
 require_once __DIR__ . '/../../../app/layouts/header.php';
 require_once __DIR__ . '/../../../app/layouts/navbar.php';
 ?>
-<main class="container py-4" id="scanner-root" data-endpoint="/app/handlers/attendance.php">
+<main class="container py-4" id="scanner-root" data-endpoint="<?= APP_URL ?>/handlers/attendance.php">
     <?= display_flash_message() ?>
 
     <div class="text-center mb-3">
