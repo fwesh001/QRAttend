@@ -36,6 +36,14 @@ switch ($action) {
         handleBulkImportStudents();
         break;
 
+    case 'add_lecturer':
+        handleAddLecturer();
+        break;
+
+    case 'add_course':
+        handleAddCourse();
+        break;
+
     default:
         set_flash_message('danger', 'Unknown administrative action.');
         header('Location: ' . APP_URL . '/portals/admin/students.php');
