@@ -1,2 +1,80 @@
-﻿/* QRAttend - custom styles. Scaffold. */
+﻿/* QRAttend - custom styles
+ * ---------------------------------------------------------------------------
+ * Brand palette is exposed globally via :root (see header.php BRAND_CSS_VARS).
+ * These rules add mobile-first polish on top of Bootstrap 5.
+ */
+
+:root {
+    --brand-primary:   #0B6E4F;
+    --brand-primary-d: #08543C;
+    --brand-secondary: #F39200;
+    --brand-secondary-d:#D67E00;
+    --brand-bg:        #FFFFFF;
+    --brand-surface:   #F5F7F6;
+    --brand-text:      #1A1A1A;
+    --brand-danger:    #D32F2F;
+    --brand-success:   #2E7D32;
+}
+
+body {
+    background-color: var(--brand-surface);
+    color: var(--brand-text);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Subtle letter-spacing helper used on section labels */
+.letter-spacing-1 {
+    letter-spacing: 0.08em;
+}
+
+/* Login card refinements */
+.card.rounded-4 {
+    border-radius: 1rem !important;
+}
+
+/* Ensure navbar toggler is visible on the green background */
+.navbar-dark .navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Full-width touch-friendly buttons on small screens */
+@media (max-width: 575.98px) {
+    .btn.w-100 {
+        min-height: 48px; /* >=44px touch target per PRD NFR */
+    }
+    .card-body {
+        padding: 1.25rem !important;
+    }
+}
+
+/* Accessible focus ring using brand primary */
+.btn:focus-visible,
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 0.2rem rgba(11, 110, 79, 0.25);
+}
+
+/* Brand button variant (used where a class is preferred over inline style) */
+.btn-brand {
+    background-color: var(--brand-primary);
+    color: #fff;
+    font-weight: 600;
+}
+.btn-brand:hover,
+.btn-brand:focus {
+    background-color: var(--brand-primary-d);
+    color: #fff;
+}
+
+.btn-brand-accent {
+    background-color: var(--brand-secondary);
+    color: #fff;
+    font-weight: 600;
+}
+.btn-brand-accent:hover,
+.btn-brand-accent:focus {
+    background-color: var(--brand-secondary-d);
+    color: #fff;
+}
 
