@@ -177,3 +177,92 @@ function handleBulkImportStudents(): void
     exit;
 }
 
+/**
+ * Add a single lecturer (faculty member) with a secure default password.
+ */
+function handleAddLecturer(): void
+{
+    $staffNo = trim((string) ($_POST['staff_no'] ?? ''));
+    $name    = trim((string) ($_POST['name'] ?? ''));
+    $email   = trim((string) ($_POST['email'] ?? ''));
+    $deptId  = filter_var($_POST['department_id'] ?? null, FILTER_VALIDATE_INT);
+
+    if ($staffNo === '' || $name === '' || $deptId === false || $deptId <= 0
+        || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        set_flash_message('danger', 'Please complete all lecturer fields with valid values.');
+        header('Location: ' . APP_URL . '/portals/admin/lecturers.php');
+        exit;
+    }
+
+    try {
+        $db = get_db();
+        $rawPass = 'FedpoNas123!';
+        $hash    = password_hash($rawPass, PASSWORD_BCRYPT);
+
+        $stmt = $db->prepare(
+            'INSERT INTO lecturers (staff_no, name, email, password, department_id)
+             VALUES (?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE name = VALUES(name), email = VALUES(email),
+                                     department_id = VALUES(department_id)'
+        );
+        $stmt->execute([$staffNo, $name, $email, $hash, $deptId]);
+
+        log_activity(
+            $db, 'admin', (int) $_SESSION['user_id'],
+            "Added/updated lecturer {$staffNo} ({$name})",
+            get_client_ip()
+        );
+        set_flash_message('success', "Lecturer '{$name}' saved successfully.");
+    } catch (RuntimeException $e) {
+        set_flash_message('danger', 'Save failed: ' . $e->getMessage());
+    } catch (PDOException $e) {
+        error_log('[QRAttend] add lecturer error: ' . $e->getMessage());
+        set_flash_message('danger', 'Save failed: a database error occurred.');
+    }
+
+    header('Location: ' . APP_URL . '/portals/admin/lecturers.php');
+    exit;
+}
+
+/**
+ * Add a single course (curriculum entry).
+ */
+function handleAddCourse(): void
+{
+    $code    = trim((string) ($_POST['course_code'] ?? ''));
+    $title   = trim((string) ($_POST['course_title'] ?? ''));
+    $units   = filter_var($_POST['credit_units'] ?? null, FILTER_VALIDATE_INT);
+
+    if ($code === '' || $title === '' || $units === false || $units < 0) {
+        set_flash_message('danger', 'Please provide a valid course code, title, and credit units.');
+        header('Location: ' . APP_URL . '/portals/admin/courses.php');
+        exit;
+    }
+
+    try {
+        $db = get_db();
+        $stmt = $db->prepare(
+            'INSERT INTO courses (course_code, course_title, credit_units)
+             VALUES (?, ?, ?)
+             ON DUPLICATE KEY UPDATE course_title = VALUES(course_title),
+                                     credit_units = VALUES(credit_units)'
+        );
+        $stmt->execute([$code, $title, $units]);
+
+        log_activity(
+            $db, 'admin', (int) $_SESSION['user_id'],
+            "Added/updated course {$code} ({$title})",
+            get_client_ip()
+        );
+        set_flash_message('success', "Course '{$code}' saved successfully.");
+    } catch (RuntimeException $e) {
+        set_flash_message('danger', 'Save failed: ' . $e->getMessage());
+    } catch (PDOException $e) {
+        error_log('[QRAttend] add course error: ' . $e->getMessage());
+        set_flash_message('danger', 'Save failed: a database error occurred.');
+    }
+
+    header('Location: ' . APP_URL . '/portals/admin/courses.php');
+    exit;
+}
+
