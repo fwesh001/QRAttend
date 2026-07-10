@@ -1,4 +1,4 @@
-﻿<?php
+﻿<?php declare(strict_types=1);
 /**
  * QRAttend :: Administrative Core Handler
  * -----------------------------------------------------------------------------
@@ -8,8 +8,6 @@
  * Output: redirects back to the relevant admin page with a flash message
  * (no direct rendering). On fatal errors it rolls back the DB transaction.
  */
-
-declare(strict_types=1);
 
 require_once __DIR__ . '/../config/config.php';
 if (session_status() === PHP_SESSION_NONE) {

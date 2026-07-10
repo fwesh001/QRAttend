@@ -1,4 +1,4 @@
-﻿<?php
+﻿<?php declare(strict_types=1);
 /**
  * QRAttend :: Database Connection Manager (PDO)
  * -----------------------------------------------------------------------------
@@ -11,8 +11,6 @@
  * On connection failure it logs a sanitized message server-side and surfaces a
  * generic, non-leaking message to the client (no host/user/password exposed).
  */
-
-declare(strict_types=1);
 
 // Ensure configuration (DB_* constants + session hardening) is loaded first.
 if (!defined('DB_HOST')) {

@@ -1,4 +1,4 @@
-﻿<?php
+﻿<?php declare(strict_types=1);
 /**
  * QRAttend :: Login & Logout Transaction Processing Engine
  * -----------------------------------------------------------------------------
@@ -12,8 +12,6 @@
  *   - on failure: logs the suspicious attempt, flashes an error, returns to login
  *   - supports a ?action=logout branch for secure session termination
  */
-
-declare(strict_types=1);
 
 // Load config (constants + session hardening) and start the secure session.
 require_once __DIR__ . '/../config/config.php';

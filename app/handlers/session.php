@@ -1,4 +1,4 @@
-﻿<?php
+﻿<?php declare(strict_types=1);
 /**
  * QRAttend :: Session Engine & AJAX Endpoint
  * -----------------------------------------------------------------------------
@@ -11,8 +11,6 @@
  * database.php). Output is JSON for the polling branch; init returns JSON too
  * so the launcher page can react without a full reload.
  */
-
-declare(strict_types=1);
 
 require_once __DIR__ . '/../config/config.php';
 if (session_status() === PHP_SESSION_NONE) {

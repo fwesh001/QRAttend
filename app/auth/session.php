@@ -1,4 +1,4 @@
-﻿<?php
+﻿<?php declare(strict_types=1);
 /**
  * QRAttend :: Strict Role Guards (Authorization Middleware)
  * -----------------------------------------------------------------------------
@@ -10,8 +10,6 @@
  * On any violation the engine: drops a red "Access Denied" flash, destroys the
  * invalid session, and redirects to public/login.php.
  */
-
-declare(strict_types=1);
 
 // Load configuration (defines constants + hardens session settings)
 require_once __DIR__ . '/../config/config.php';

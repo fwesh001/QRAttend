@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * QRAttend :: Public Administration Proxy
  * -----------------------------------------------------------------------------
@@ -8,8 +8,6 @@
  *
  * Authorization is enforced here AND again inside admin.php (defense in depth).
  */
-
-declare(strict_types=1);
 
 require_once __DIR__ . '/../../app/config/config.php';
 if (session_status() === PHP_SESSION_NONE) {

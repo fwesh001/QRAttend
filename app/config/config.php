@@ -1,4 +1,4 @@
-﻿<?php
+﻿<?php declare(strict_types=1);
 /**
  * QRAttend :: Application Configuration & Bootstrap
  * -----------------------------------------------------------------------------
@@ -13,8 +13,9 @@
  * directly over HTTP.
  */
 
-declare(strict_types=1);
 
+
+// All your other code, requires, and variables follow below...
 // =============================================================================
 // 1. ENVIRONMENT LOADER
 //    Priority: real $_ENV / getenv()  ->  parsed .env file  ->  safe defaults

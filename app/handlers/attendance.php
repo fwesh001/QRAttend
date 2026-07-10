@@ -1,4 +1,4 @@
-﻿<?php
+﻿<?php declare(strict_types=1);
 /**
  * QRAttend :: Attendance Verification Processor (AJAX-only gateway)
  * -----------------------------------------------------------------------------
@@ -10,8 +10,6 @@
  *
  * Output is always JSON. No direct browser rendering.
  */
-
-declare(strict_types=1);
 
 require_once __DIR__ . '/../config/config.php';
 if (session_status() === PHP_SESSION_NONE) {

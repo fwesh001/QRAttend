@@ -1,4 +1,4 @@
-﻿<?php
+﻿<?php declare(strict_types=1);
 /**
  * QRAttend :: Global Helper Framework
  * -----------------------------------------------------------------------------
@@ -12,8 +12,6 @@
  * required AFTER config.php so session_start() has already been invoked by the
  * caller (session.php / auth.php / portal pages).
  */
-
-declare(strict_types=1);
 
 // =============================================================================
 // 1. CLIENT IP CAPTURE (proxy-aware, safe)
