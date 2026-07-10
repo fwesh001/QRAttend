@@ -1,4 +1,4 @@
-﻿<?php declare(strict_types=1);
+<?php declare(strict_types=1);
 /**
  * QRAttend :: Application Configuration & Bootstrap
  * -----------------------------------------------------------------------------
@@ -165,6 +165,10 @@ define('DB_NAME',    qrattend_env('DB_NAME', 'qrattend'));
 define('DB_USER',    qrattend_env('DB_USER', 'root'));
 define('DB_PASS',    qrattend_env('DB_PASS', ''));
 define('DB_CHARSET', qrattend_env('DB_CHARSET', 'utf8mb4'));
+
+// Load the PDO connection manager so get_db() is available to every script
+// that includes config.php. database.php self-guards against double-loading.
+require_once __DIR__ . '/database.php';
 
 // End of config.php
 

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * QRAttend :: Admin Curriculum (Course) Management Suite
  * -----------------------------------------------------------------------------

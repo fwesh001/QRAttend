@@ -1,4 +1,4 @@
-﻿<?php declare(strict_types=1);
+<?php declare(strict_types=1);
 /**
  * QRAttend :: Administrative Core Handler
  * -----------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * QRAttend :: Lecturer Live Session Control Center (Projector Mode)
  * -----------------------------------------------------------------------------

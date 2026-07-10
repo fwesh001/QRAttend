@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * QRAttend :: Student Attendance Scanner (Mobile View)
  * -----------------------------------------------------------------------------

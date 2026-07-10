@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * QRAttend :: Admin Faculty (Lecturer) Management Suite
  * -----------------------------------------------------------------------------

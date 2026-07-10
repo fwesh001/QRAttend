@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * QRAttend :: Admin Student Provisioning Interface
  * -----------------------------------------------------------------------------

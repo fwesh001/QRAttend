@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * QRAttend :: Lecturer Class Attendance Ledger (Roster)
  * -----------------------------------------------------------------------------

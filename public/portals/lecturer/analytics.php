@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * QRAttend :: Lecturer Course Performance Trends (Analytics)
  * -----------------------------------------------------------------------------
