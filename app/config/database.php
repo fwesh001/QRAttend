@@ -55,6 +55,10 @@ function db_connect(): PDO
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
         // Extra charset hardening at the connection level
         $pdo->exec('SET NAMES ' . DB_CHARSET . ' COLLATE utf8mb4_unicode_ci');
+        // Align MySQL's NOW()/CURTIME() with the app timezone (Africa/Lagos)
+        // so session expiry windows match the PHP-computed expires_at values.
+        $tz = defined('APP_TIMEZONE') ? APP_TIMEZONE : 'Africa/Lagos';
+        $pdo->exec("SET time_zone = '$tz'");
         return $pdo;
     } catch (PDOException $e) {
         // Sanitized server-side log (includes detail for the admin, NOT the client)

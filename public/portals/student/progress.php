@@ -30,7 +30,8 @@ $lecturesHeld = 15;
 /*
 SELECT COUNT(*) FROM attendance_sessions s
 JOIN course_allocations ca ON ca.id = s.course_allocation_id
-JOIN students st ON st.department_id = ca.department_id  -- or via enrolment table
+JOIN lecturers l ON l.id = ca.lecturer_id
+JOIN students st ON st.department_id = l.department_id
 WHERE st.id = :student_id AND s.status = 'Closed';
 */
 

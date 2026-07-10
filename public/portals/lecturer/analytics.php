@@ -71,7 +71,8 @@ try {
     $riskStmt = $db->prepare(
         'SELECT COUNT(DISTINCT s.id) AS at_risk
          FROM students s
-         JOIN course_allocations ca ON ca.department_id = s.department_id
+         JOIN lecturers l ON l.department_id = s.department_id
+         JOIN course_allocations ca ON ca.lecturer_id = l.id
          LEFT JOIN attendance_sessions ses ON ses.course_allocation_id = ca.id
          LEFT JOIN attendance_records ar
                 ON ar.session_id = ses.id AND ar.student_id = s.id

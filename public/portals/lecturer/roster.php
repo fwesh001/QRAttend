@@ -67,7 +67,8 @@ try {
                    AND ar.attendance_status = \'Present\') AS attended
          FROM students s
          JOIN course_allocations ca ON ca.id = :alloc
-         WHERE s.department_id = ca.department_id
+         JOIN lecturers l ON l.id = ca.lecturer_id
+         WHERE s.department_id = l.department_id
          ORDER BY s.name ASC'
     );
     $rosterStmt->execute([':alloc' => $allocationId]);
