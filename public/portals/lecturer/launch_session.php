@@ -28,6 +28,9 @@ if ($allocationId === false || $allocationId <= 0) {
 }
 
 // Verify the lecturer owns this allocation and fetch course details.
+// Also detect an existing OPEN, non-expired session so returning to this page
+// resumes the live session instead of spawning a duplicate.
+$existingSession = null;
 try {
     $db = get_db();
     $stmt = $db->prepare(
@@ -45,6 +48,16 @@ try {
         header('Location: ' . APP_URL . '/portals/lecturer/dashboard.php');
         exit;
     }
+
+    $exStmt = $db->prepare(
+        'SELECT id, qr_token, session_pin, expires_at
+         FROM attendance_sessions
+         WHERE course_allocation_id = :alloc AND status = :open AND expires_at > NOW()
+         ORDER BY expires_at DESC
+         LIMIT 1'
+    );
+    $exStmt->execute([':alloc' => $allocationId, ':open' => 'Open']);
+    $existingSession = $exStmt->fetch(PDO::FETCH_ASSOC);
 } catch (RuntimeException $e) {
     set_flash_message('danger', $e->getMessage());
     header('Location: ' . APP_URL . '/portals/lecturer/dashboard.php');
@@ -58,7 +71,11 @@ require_once __DIR__ . '/../../../app/layouts/navbar.php';
 <main class="container-fluid py-4" id="session-root"
       data-allocation-id="<?= (int) $allocationId ?>"
       data-poll-url="<?= APP_URL ?>/handlers/session.php"
-      data-api-base="<?= rtrim(APP_URL, '/') ?>">
+      data-api-base="<?= rtrim(APP_URL, '/') ?>"
+      data-session-id="<?= $existingSession ? (int) $existingSession['id'] : '' ?>"
+      data-qr-token="<?= $existingSession ? sanitize_input($existingSession['qr_token']) : '' ?>"
+      data-session-pin="<?= $existingSession ? sanitize_input($existingSession['session_pin']) : '' ?>"
+      data-expires-at="<?= $existingSession ? sanitize_input($existingSession['expires_at']) : '' ?>">
 
     <?= display_flash_message() ?>
 

@@ -38,6 +38,28 @@ try {
 } catch (PDOException $e) {
     error_log('[QRAttend] lecturer allocations query error: ' . $e->getMessage());
 }
+
+// --- Active live sessions (OPEN + not yet expired) for this lecturer --------
+$activeSessions = [];
+try {
+    $db = get_db();
+    $sessStmt = $db->prepare(
+        'SELECT s.id AS session_id, s.course_allocation_id AS allocation_id, s.expires_at,
+                c.course_code, c.course_title,
+                (SELECT COUNT(*) FROM attendance_records ar WHERE ar.session_id = s.id) AS checked_in
+         FROM attendance_sessions s
+         JOIN course_allocations ca ON ca.id = s.course_allocation_id
+         JOIN courses c ON c.id = ca.course_id
+         WHERE ca.lecturer_id = :lecturer AND s.status = :open AND s.expires_at > NOW()
+         ORDER BY s.expires_at ASC'
+    );
+    $sessStmt->execute([':lecturer' => (int) $_SESSION['user_id'], ':open' => 'Open']);
+    $activeSessions = $sessStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (RuntimeException $e) {
+    // Non-fatal: dashboard still renders without the live section.
+} catch (PDOException $e) {
+    error_log('[QRAttend] active sessions query error: ' . $e->getMessage());
+}
 ?>
 <main class="container py-4">
     <?= display_flash_message() ?>
@@ -53,6 +75,54 @@ try {
             </p>
         </div>
     </div>
+
+    <!-- Active Live Sessions (resume if you switched tabs / left the page) -->
+    <h2 class="h6 text-uppercase text-muted mb-3">
+        <i class="bi bi-broadcast me-1" style="color:var(--brand-primary);"></i>
+        Active Live Sessions
+    </h2>
+    <?php if (empty($activeSessions)): ?>
+        <div class="alert rounded-4 mb-4" role="alert"
+             style="background-color:var(--brand-surface); border:1px solid #e3e6e5;">
+            <i class="bi bi-info-circle me-1" style="color:var(--brand-secondary);"></i>
+            No live session is currently running. Launch one from your allocated courses below.
+        </div>
+    <?php else: ?>
+        <div class="row g-3 mb-4">
+            <?php foreach ($activeSessions as $sess): ?>
+                <?php
+                    $expiry = strtotime($sess['expires_at']);
+                    $minsLeft = max(0, ceil(($expiry - time()) / 60));
+                ?>
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-4"
+                         style="border-left-color:var(--brand-primary) !important;">
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge text-white" style="background-color:var(--brand-primary);">
+                                    <i class="bi bi-circle-fill me-1" style="font-size:0.5rem;"></i>LIVE
+                                </span>
+                                <span class="small text-muted">
+                                    <?= (int) $minsLeft ?> min left
+                                </span>
+                            </div>
+                            <h3 class="h6 fw-bold mb-1"><?= sanitize_input($sess['course_code']) ?></h3>
+                            <p class="small text-muted mb-2"><?= sanitize_input($sess['course_title']) ?></p>
+                            <div class="small mb-3">
+                                <i class="bi bi-people-fill me-1"></i>
+                                <?= (int) $sess['checked_in'] ?> student(s) checked in
+                            </div>
+                            <a href="launch_session.php?allocation_id=<?= (int) $sess['allocation_id'] ?>"
+                               class="btn btn-sm w-100 fw-semibold text-white mt-auto"
+                               style="background-color:var(--brand-secondary);">
+                                <i class="bi bi-arrow-return-left me-1"></i> Resume Session
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
 
     <h2 class="h6 text-uppercase text-muted mb-3">Your Allocated Courses</h2>
 

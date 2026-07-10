@@ -66,8 +66,27 @@
         if (countdownTimer) clearInterval(countdownTimer);
     }
 
-    // ---- 1. Create the session (lazy init) --------------------------------
+    // ---- 1. Create / resume the session (lazy init) ----------------------
     function initSession() {
+        // If the page already carries an existing open session (e.g. the
+        // lecturer returned to this screen), resume it without creating a
+        // duplicate. Otherwise POST to mint a fresh session.
+        const existingId    = root.dataset.sessionId;
+        const existingToken = root.dataset.qrToken;
+        const existingExpiry = root.dataset.expiresAt;
+        const existingPin   = root.dataset.sessionPin;
+
+        if (existingId && existingToken && existingExpiry) {
+            sessionId = parseInt(existingId, 10);
+            qrToken   = existingToken;
+            expiresAt = Math.floor(new Date(existingExpiry.replace(' ', 'T')).getTime() / 1000);
+            if (elPin) elPin.textContent = existingPin || '------';
+            renderQr(qrToken);
+            startCountdown();
+            startPolling();
+            return;
+        }
+
         const fd = new FormData();
         fd.append('allocation_id', allocationId);
 

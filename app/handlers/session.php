@@ -62,6 +62,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['allocation_id'])) {
             session_json(['success' => false, 'message' => 'Allocation not owned by lecturer.'], 403);
         }
 
+        // Reuse an existing OPEN, non-expired session for this allocation so
+        // that switching tabs / leaving and returning does not spawn duplicate
+        // or orphaned sessions. Otherwise mint a fresh one.
+        $reuse = $db->prepare(
+            'SELECT id, qr_token, session_pin, expires_at, duration_minutes
+             FROM attendance_sessions
+             WHERE course_allocation_id = :alloc AND status = :open
+               AND expires_at > NOW()
+             ORDER BY expires_at DESC
+             LIMIT 1'
+        );
+        $reuse->execute([':alloc' => $allocationId, ':open' => 'Open']);
+        $existing = $reuse->fetch(PDO::FETCH_ASSOC);
+
+        if ($existing !== false) {
+            session_json([
+                'success'     => true,
+                'session_id'  => (int) $existing['id'],
+                'qr_token'    => $existing['qr_token'],
+                'session_pin' => $existing['session_pin'],
+                'expires_at'  => $existing['expires_at'],
+                'duration'    => (int) $existing['duration_minutes'],
+                'reused'      => true,
+            ]);
+        }
+
         // Generate cryptographic token + 6-digit numeric pin.
         $qrToken = bin2hex(random_bytes(16));               // 32-char hex
         $sessionPin = (string) random_int(100000, 999999);  // 6-digit backup pin
