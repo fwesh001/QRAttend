@@ -1,0 +1,2 @@
+﻿// QRAttend - client script. Scaffold.
+
