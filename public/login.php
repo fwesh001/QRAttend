@@ -47,7 +47,7 @@ require_once __DIR__ . '/../app/layouts/navbar.php';
                         Sign In to Your Portal
                     </h2>
 
-                    <form action="../app/auth/auth.php" method="POST" novalidate>
+                    <form action="auth.php" method="POST" novalidate>
 
                         <!-- Identity -->
                         <div class="mb-3">
