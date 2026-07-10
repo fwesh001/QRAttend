@@ -20,12 +20,25 @@ $pageTitle = INSTITUTION_SHORT . ' - Admin Dashboard';
 require_once __DIR__ . '/../../../app/layouts/header.php';
 require_once __DIR__ . '/../../../app/layouts/navbar.php';
 
-// --- Demo stats (replace with live COUNT queries in a later phase) ----------
-$stats = [
-    'students' => 312,
-    'faculty'  => 24,
-    'courses'  => 18,
-];
+// --- Live stats ----------------------------------------------------------
+$stats = ['students' => 0, 'faculty' => 0, 'courses' => 0];
+try {
+    $db = get_db();
+    $counts = [
+        'students' => 'SELECT COUNT(*) FROM students',
+        'faculty'  => 'SELECT COUNT(*) FROM lecturers',
+        'courses'  => 'SELECT COUNT(*) FROM courses',
+    ];
+    foreach ($counts as $key => $sql) {
+        $stmt = $db->query($sql);
+        $stats[$key] = (int) $stmt->fetchColumn();
+    }
+} catch (RuntimeException $e) {
+    set_flash_message('danger', $e->getMessage());
+} catch (PDOException $e) {
+    error_log('[QRAttend] admin dashboard query error: ' . $e->getMessage());
+    set_flash_message('danger', 'Could not load dashboard statistics.');
+}
 
 // Management suite navigation panels
 $panels = [
