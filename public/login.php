@@ -44,7 +44,7 @@ require_once __DIR__ . '/../app/layouts/navbar.php';
 
                 <div class="card-body p-4">
                     <h2 class="h6 text-center text-uppercase letter-spacing-1 mb-4 text-muted">
-                        Sign In to Your Portal
+                        Sign In
                     </h2>
 
                     <form action="auth.php" method="POST" novalidate>
@@ -72,17 +72,6 @@ require_once __DIR__ . '/../app/layouts/navbar.php';
                                 <input type="password" class="form-control" id="password" name="password"
                                        placeholder="Enter Password" autocomplete="current-password" required>
                             </div>
-                        </div>
-
-                        <!-- Role selection -->
-                        <div class="mb-4">
-                            <label for="role" class="form-label fw-semibold">User Role</label>
-                            <select class="form-select" id="role" name="role" required>
-                                <option value="" selected disabled>Select your role…</option>
-                                <option value="student">Student</option>
-                                <option value="lecturer">Lecturer</option>
-                                <option value="admin">Administrator</option>
-                            </select>
                         </div>
 
                         <!-- Submit -->

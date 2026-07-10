@@ -75,11 +75,18 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // prepared statement below, so we must NOT htmlspecialchars() it before the
 // lookup (that would corrupt values containing &, <, >, etc.). Output escaping
 // is applied only when the value is later echoed to HTML.
-$role     = strtolower(trim((string) ($_POST['role'] ?? '')));
+// The role is NO LONGER supplied by the user; it is auto-detected from the
+// identity by testing each user table in a fixed precedence order.
 $identity = trim((string) ($_POST['identity'] ?? ''));  // username / email / matric / staff_no
 $password = (string) ($_POST['password'] ?? '');        // raw; never escaped, only verified
 
-// Map role -> table + identity column + display column
+if ($identity === '' || $password === '') {
+    set_flash_message('danger', 'Invalid credentials or role routing mismatch.');
+    header('Location: ' . APP_URL . '/login.php');
+    exit;
+}
+
+// Map role -> table + identity column + display column.
 $roleMap = [
     'admin' => [
         'table'   => 'administrators',
@@ -101,53 +108,72 @@ $roleMap = [
     ],
 ];
 
-if (!array_key_exists($role, $roleMap) || $identity === '' || $password === '') {
-    set_flash_message('danger', 'Invalid credentials or role routing mismatch.');
-    header('Location: ' . APP_URL . '/login.php');
-    exit;
-}
-
-$cfg = $roleMap[$role];
+// Precedence order for auto-detection. Higher-privilege roles are tested first
+// so a rare cross-table identity collision resolves deterministically to the
+// more privileged account (and avoids a student "claiming" a lecturer's email).
+$roleOrder = ['admin', 'lecturer', 'student'];
 
 try {
     $db = get_db();
-
-    // 2. Airtight prepared statement: match identity against any allowed column.
-    $identCols = $cfg['ident'];
-    $conditions = [];
-    $params = [];
-    foreach ($identCols as $i => $col) {
-        $placeholder = ":ident_{$i}";
-        $conditions[] = "`{$col}` = {$placeholder}";
-        $params[$placeholder] = $identity;
-    }
-    $where = implode(' OR ', $conditions);
-
-    $sql = "SELECT `{$cfg['id_col']}` AS id, `name`, `{$cfg['label']}` AS label,
-                   `password`
-            FROM `{$cfg['table']}`
-            WHERE {$where}
-            LIMIT 1";
-
-    $stmt = $db->prepare($sql);
-    $stmt->execute($params);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
     $ip = get_client_ip();
 
-    if ($user === false || !password_verify($password, $user['password'])) {
-        // 3a. Authentication failure -> log suspicious footprint
+    $authedRole = null;
+    $user       = null;
+
+    // 2. Auto-detect the role: test each table in precedence order.
+    foreach ($roleOrder as $role) {
+        $cfg = $roleMap[$role];
+
+        $identCols = $cfg['ident'];
+        $conditions = [];
+        $params = [':identity' => $identity];
+        foreach ($identCols as $i => $col) {
+            $placeholder = ":ident_{$i}";
+            $conditions[] = "`{$col}` = {$placeholder}";
+            $params[$placeholder] = $identity;
+        }
+        $where = implode(' OR ', $conditions);
+
+        $sql = "SELECT `{$cfg['id_col']}` AS id, `name`, `{$cfg['label']}` AS label,
+                       `password`
+                FROM `{$cfg['table']}`
+                WHERE {$where}
+                LIMIT 1";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($row !== false) {
+            // This role owns the identity. Verify the password here and stop —
+            // do NOT fall through to other tables (prevents cross-role probing).
+            if (password_verify($password, $row['password'])) {
+                $authedRole = $role;
+                $user       = $row;
+            } else {
+                log_activity(
+                    $db, $role, 0,
+                    'Failed login attempt (invalid credentials) for identity: ' . $identity,
+                    $ip
+                );
+            }
+            break;
+        }
+    }
+
+    if ($authedRole === null || $user === null) {
+        // 3a. Authentication failure -> log suspicious footprint (role unknown).
         log_activity(
-            $db,
-            $role,
-            0,
-            'Failed login attempt (invalid credentials or role routing mismatch) for identity: ' . $identity,
+            $db, 'unknown', 0,
+            'Failed login attempt (no matching identity) for identity: ' . $identity,
             $ip
         );
         set_flash_message('danger', 'Invalid credentials or role routing mismatch.');
         header('Location: ' . APP_URL . '/login.php');
         exit;
     }
+
+    $role = $authedRole;
 
     // 3b. Authentication success
     // Regenerate session id to neutralize session-fixation attacks.
