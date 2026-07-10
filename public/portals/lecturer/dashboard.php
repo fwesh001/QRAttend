@@ -20,13 +20,24 @@ $pageTitle = INSTITUTION_SHORT . ' - Lecturer Dashboard';
 require_once __DIR__ . '/../../../app/layouts/header.php';
 require_once __DIR__ . '/../../../app/layouts/navbar.php';
 
-// --- Demo allocations (replace with live JOIN query in a later phase) -------
-// Mirrors course_allocations -> courses relational structure.
-$allocations = [
-    ['id' => 1, 'code' => 'CSC 401', 'title' => 'Database Management Systems', 'units' => 3],
-    ['id' => 2, 'code' => 'CSC 305', 'title' => 'Web Programming',            'units' => 2],
-    ['id' => 3, 'code' => 'CSC 210', 'title' => 'Computer Architecture',      'units' => 3],
-];
+// --- Live allocations for this lecturer (course_allocations -> courses) -----
+$allocations = [];
+try {
+    $db = get_db();
+    $stmt = $db->prepare(
+        'SELECT ca.id, c.course_code AS code, c.course_title AS title, c.credit_units AS units
+         FROM course_allocations ca
+         JOIN courses c ON c.id = ca.course_id
+         WHERE ca.lecturer_id = :lecturer
+         ORDER BY c.course_code ASC'
+    );
+    $stmt->execute([':lecturer' => (int) $_SESSION['user_id']]);
+    $allocations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (RuntimeException $e) {
+    set_flash_message('danger', $e->getMessage());
+} catch (PDOException $e) {
+    error_log('[QRAttend] lecturer allocations query error: ' . $e->getMessage());
+}
 ?>
 <main class="container py-4">
     <?= display_flash_message() ?>
@@ -47,6 +58,16 @@ $allocations = [
 
     <!-- Course allocation grid -->
     <div class="row g-3">
+        <?php if (empty($allocations)): ?>
+            <div class="col-12">
+                <div class="alert rounded-4 text-center" role="alert"
+                     style="background-color:var(--brand-surface); border:1px solid #e3e6e5;">
+                    <i class="bi bi-info-circle me-1" style="color:var(--brand-secondary);"></i>
+                    No courses are allocated to your account yet. Contact an administrator to
+                    assign you to a course via the Course Allocations panel.
+                </div>
+            </div>
+        <?php else: ?>
         <?php foreach ($allocations as $course): ?>
             <div class="col-12 col-md-6 col-lg-4">
                 <div class="card border-0 shadow-sm rounded-4 h-100">
@@ -74,7 +95,7 @@ $allocations = [
                 </div>
             </div>
         <?php endforeach; ?>
-    </div>
+        <?php endif; ?>
 </main>
 
 <?php
