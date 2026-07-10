@@ -126,7 +126,7 @@ try {
 
         $identCols = $cfg['ident'];
         $conditions = [];
-        $params = [':identity' => $identity];
+        $params = [];
         foreach ($identCols as $i => $col) {
             $placeholder = ":ident_{$i}";
             $conditions[] = "`{$col}` = {$placeholder}";
