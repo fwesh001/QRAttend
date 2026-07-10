@@ -53,7 +53,7 @@ try {
                     <h2 class="h6 fw-bold mb-0">Bulk Import Students (CSV)</h2>
                 </div>
                 <div class="card-body">
-                    <form action="../../../app/handlers/admin.php" method="POST"
+                    <form action="../../handlers/admin_gateway.php" method="POST"
                           enctype="multipart/form-data">
                         <input type="hidden" name="action" value="bulk_import_students">
 
