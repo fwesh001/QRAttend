@@ -33,9 +33,11 @@ try {
 
     // Course + ownership check.
     $courseStmt = $db->prepare(
-        'SELECT ca.id AS allocation_id, c.id AS course_id, c.course_code, c.course_title
+        'SELECT ca.id AS allocation_id, c.id AS course_id, c.course_code, c.course_title,
+                l.department_id
          FROM course_allocations ca
          JOIN courses c ON c.id = ca.course_id
+         JOIN lecturers l ON l.id = ca.lecturer_id
          WHERE ca.id = :alloc AND ca.lecturer_id = :lecturer
          LIMIT 1'
     );
@@ -47,6 +49,7 @@ try {
         exit;
     }
     $courseId = (int) $course['course_id'];
+    $departmentId = (int) $course['department_id'];
 
     // Total sessions held for this allocation.
     $heldStmt = $db->prepare(
@@ -66,12 +69,10 @@ try {
                    AND ses.course_allocation_id = :alloc
                    AND ar.attendance_status = \'Present\') AS attended
          FROM students s
-         JOIN course_allocations ca ON ca.id = :alloc
-         JOIN lecturers l ON l.id = ca.lecturer_id
-         WHERE s.department_id = l.department_id
+         WHERE s.department_id = :dept
          ORDER BY s.name ASC'
     );
-    $rosterStmt->execute([':alloc' => $allocationId]);
+    $rosterStmt->execute([':alloc' => $allocationId, ':dept' => $departmentId]);
     $roster = $rosterStmt->fetchAll(PDO::FETCH_ASSOC);
 
     $totalEnrolled = count($roster);
