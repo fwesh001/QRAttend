@@ -18,29 +18,47 @@ require_student();
 $studentId = (int) $_SESSION['user_id'];
 
 /* ===========================================================================
- * MOCK DATA STRATEGY
+ * LIVE DATA
  * ---------------------------------------------------------------------------
- * Values are mocked until the global data-import managers are complete.
- * The live PDO query structure is provided in comments beside each variable
- * so we can swap to get_db() counts in the next optimization pass.
+ * Lectures Held = every attendance session for courses allocated to lecturers
+ * in the student's own department (no separate enrolment table exists, so a
+ * student's "registered" courses are those offered within their department).
+ * Lectures Attended = this student's own Present records.
  * =========================================================================== */
 
-// 1. Total Course Lectures Held (sessions for this student's registered courses)
-$lecturesHeld = 15;
-/*
-SELECT COUNT(*) FROM attendance_sessions s
-JOIN course_allocations ca ON ca.id = s.course_allocation_id
-JOIN lecturers l ON l.id = ca.lecturer_id
-JOIN students st ON st.department_id = l.department_id
-WHERE st.id = :student_id AND s.status = 'Closed';
-*/
+try {
+    $db = get_db();
 
-// 2. Total Lectures Attended (Present rows for this student)
-$lecturesAttended = 12;
-/*
-SELECT COUNT(*) FROM attendance_records
-WHERE student_id = :student_id AND attendance_status = 'Present';
-*/
+    // 1. Total Course Lectures Held (department-wide sessions for this student).
+    $heldStmt = $db->prepare(
+        'SELECT COUNT(*)
+         FROM attendance_sessions s
+         JOIN course_allocations ca ON ca.id = s.course_allocation_id
+         JOIN lecturers l ON l.id = ca.lecturer_id
+         JOIN students st ON st.department_id = l.department_id
+         WHERE st.id = :student_id'
+    );
+    $heldStmt->execute([':student_id' => $studentId]);
+    $lecturesHeld = (int) $heldStmt->fetchColumn();
+
+    // 2. Total Lectures Attended (this student's Present records).
+    $attStmt = $db->prepare(
+        'SELECT COUNT(*)
+         FROM attendance_records
+         WHERE student_id = :student_id AND attendance_status = \'Present\''
+    );
+    $attStmt->execute([':student_id' => $studentId]);
+    $lecturesAttended = (int) $attStmt->fetchColumn();
+} catch (RuntimeException $e) {
+    set_flash_message('danger', $e->getMessage());
+    $lecturesHeld = 0;
+    $lecturesAttended = 0;
+} catch (PDOException $e) {
+    error_log('[QRAttend] progress query error: ' . $e->getMessage());
+    set_flash_message('danger', 'Could not load attendance progress.');
+    $lecturesHeld = 0;
+    $lecturesAttended = 0;
+}
 
 // 3. Aggregate Attendance Percentage
 $attendancePct = ($lecturesHeld > 0)

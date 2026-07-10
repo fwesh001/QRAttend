@@ -20,11 +20,41 @@ $pageTitle = INSTITUTION_SHORT . ' - Student Dashboard';
 require_once __DIR__ . '/../../../app/layouts/header.php';
 require_once __DIR__ . '/../../../app/layouts/navbar.php';
 
-// --- Demo analytics (replace with live query in a later phase) -------------
-$classesAttended = 14;
-$classesMissed   = 2;
-$totalClasses    = $classesAttended + $classesMissed;
-$attendancePct   = $totalClasses > 0
+// --- Live analytics -------------------------------------------------------
+$studentId = (int) $_SESSION['user_id'];
+$classesAttended = 0;
+$totalClasses    = 0;
+try {
+    $db = get_db();
+
+    // Total department-wide sessions held (student's registered courses).
+    $heldStmt = $db->prepare(
+        'SELECT COUNT(*)
+         FROM attendance_sessions s
+         JOIN course_allocations ca ON ca.id = s.course_allocation_id
+         JOIN lecturers l ON l.id = ca.lecturer_id
+         JOIN students st ON st.department_id = l.department_id
+         WHERE st.id = :student_id'
+    );
+    $heldStmt->execute([':student_id' => $studentId]);
+    $totalClasses = (int) $heldStmt->fetchColumn();
+
+    // This student's Present records.
+    $attStmt = $db->prepare(
+        'SELECT COUNT(*)
+         FROM attendance_records
+         WHERE student_id = :student_id AND attendance_status = \'Present\''
+    );
+    $attStmt->execute([':student_id' => $studentId]);
+    $classesAttended = (int) $attStmt->fetchColumn();
+} catch (RuntimeException $e) {
+    set_flash_message('danger', $e->getMessage());
+} catch (PDOException $e) {
+    error_log('[QRAttend] student dashboard query error: ' . $e->getMessage());
+    set_flash_message('danger', 'Could not load attendance summary.');
+}
+$classesMissed = max(0, $totalClasses - $classesAttended);
+$attendancePct = $totalClasses > 0
     ? round(($classesAttended / $totalClasses) * 100, 1)
     : 0;
 $isClear = $attendancePct >= ATTENDANCE_THRESHOLD;
