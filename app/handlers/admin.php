@@ -44,6 +44,14 @@ switch ($action) {
         handleAddCourse();
         break;
 
+    case 'add_allocation':
+        handleAddAllocation();
+        break;
+
+    case 'purge_logs':
+        handlePurgeLogs();
+        break;
+
     default:
         set_flash_message('danger', 'Unknown administrative action.');
         header('Location: ' . APP_URL . '/portals/admin/students.php');
@@ -263,6 +271,96 @@ function handleAddCourse(): void
     }
 
     header('Location: ' . APP_URL . '/portals/admin/courses.php');
+    exit;
+}
+
+/**
+ * Bind a lecturer to a course (course allocation).
+ */
+function handleAddAllocation(): void
+{
+    $lecturerId = filter_var($_POST['lecturer_id'] ?? null, FILTER_VALIDATE_INT);
+    $courseId   = filter_var($_POST['course_id'] ?? null, FILTER_VALIDATE_INT);
+
+    if ($lecturerId === false || $lecturerId <= 0 || $courseId === false || $courseId <= 0) {
+        set_flash_message('danger', 'Please select both a lecturer and a course.');
+        header('Location: ' . APP_URL . '/portals/admin/allocations.php');
+        exit;
+    }
+
+    try {
+        $db = get_db();
+        // Composite UNIQUE(lecturer_id, course_id) blocks duplicates.
+        $stmt = $db->prepare(
+            'INSERT INTO course_allocations (lecturer_id, course_id)
+             VALUES (?, ?)'
+        );
+        $stmt->execute([$lecturerId, $courseId]);
+
+        log_activity(
+            $db, 'admin', (int) $_SESSION['user_id'],
+            "Allocated lecturer #{$lecturerId} to course #{$courseId}",
+            get_client_ip()
+        );
+        set_flash_message('success', 'Course allocation saved successfully.');
+    } catch (RuntimeException $e) {
+        set_flash_message('danger', 'Allocation failed: ' . $e->getMessage());
+    } catch (PDOException $e) {
+        // 23000 = integrity violation (duplicate allocation / bad FK)
+        if ($e->getCode() === '23000') {
+            set_flash_message('warning', 'This lecturer is already allocated to that course.');
+        } else {
+            error_log('[QRAttend] add allocation error: ' . $e->getMessage());
+            set_flash_message('danger', 'Allocation failed: a database error occurred.');
+        }
+    }
+
+    header('Location: ' . APP_URL . '/portals/admin/allocations.php');
+    exit;
+}
+
+/**
+ * Purge the audit_logs table (admin-only destructive action).
+ * The purge event itself is recorded to a separate secure sys_log file so the
+ * action is never fully erased from the system's knowledge.
+ */
+function handlePurgeLogs(): void
+{
+    try {
+        $db = get_db();
+
+        // Count before purge for the record.
+        $countStmt = $db->prepare('SELECT COUNT(*) FROM audit_logs');
+        $countStmt->execute();
+        $purged = (int) $countStmt->fetchColumn();
+
+        $del = $db->prepare('DELETE FROM audit_logs');
+        $del->execute();
+
+        // Record the purge in a separate secure sys_log (outside the DB table).
+        $sysMsg = sprintf(
+            "[%s] AUDIT PURGE by admin #%d (%s) — %d row(s) removed.\n",
+            date('Y-m-d H:i:s'),
+            (int) $_SESSION['user_id'],
+            get_client_ip(),
+            $purged
+        );
+        // sys_log lives one level above public/ (outside web root) for safety.
+        $sysLogPath = __DIR__ . '/../../storage/sys_log.txt';
+        if (!is_dir(dirname($sysLogPath))) {
+            mkdir(dirname($sysLogPath), 0750, true);
+        }
+        file_put_contents($sysLogPath, $sysMsg, FILE_APPEND | LOCK_EX);
+
+        set_flash_message('success', "Audit logs purged ({$purged} record(s) removed).");
+    } catch (RuntimeException $e) {
+        set_flash_message('danger', 'Purge failed: ' . $e->getMessage());
+    } catch (PDOException $e) {
+        error_log('[QRAttend] purge logs error: ' . $e->getMessage());
+        set_flash_message('danger', 'Purge failed: a database error occurred.');
+    }
+
+    header('Location: ' . APP_URL . '/portals/admin/backup.php');
     exit;
 }
 
