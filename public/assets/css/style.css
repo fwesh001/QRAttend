@@ -93,3 +93,95 @@ body {
     font-size: 1.5rem;
 }
 
+/* Global app-wide loading overlay */
+body.page-loading > :not(.qra-loader-overlay) {
+    visibility: hidden;
+}
+
+body.page-loading .qra-loader-overlay,
+body.page-loading-active .qra-loader-overlay {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.qra-loader-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at center, rgba(11, 110, 79, 0.18), rgba(15, 24, 30, 0.95));
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+
+.qra-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+}
+
+.qra-rotor {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    transform-style: preserve-3d;
+    perspective: 900px;
+}
+
+.qra-box {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    border-radius: 0.9rem;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    background: linear-gradient(135deg, rgba(11, 110, 79, 0.95), rgba(46, 125, 50, 0.9));
+    box-shadow: 0 0.75rem 1.75rem rgba(0, 0, 0, 0.22);
+    transform-origin: center center;
+}
+
+.qra-box--one {
+    transform: translate(-50%, -50%) rotateX(50deg) rotateY(0deg);
+    animation: qra-rotate-one 1.6s linear infinite;
+}
+
+.qra-box--two {
+    transform: translate(-50%, -50%) rotateX(0deg) rotateY(50deg);
+    animation: qra-rotate-two 1.6s linear infinite;
+}
+
+@keyframes qra-rotate-one {
+    0% {
+        transform: translate(-50%, -50%) rotateX(50deg) rotateY(0deg);
+    }
+    100% {
+        transform: translate(-50%, -50%) rotateX(50deg) rotateY(360deg);
+    }
+}
+
+@keyframes qra-rotate-two {
+    0% {
+        transform: translate(-50%, -50%) rotateX(0deg) rotateY(50deg);
+    }
+    100% {
+        transform: translate(-50%, -50%) rotateX(0deg) rotateY(410deg);
+    }
+}
+
+.qra-loader-label {
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(240, 250, 246, 0.95);
+}
+

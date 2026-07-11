@@ -41,5 +41,20 @@
         }
     </style>
 </head>
-<body>
+<body class="page-loading">
+<div class="qra-loader-overlay" aria-hidden="true">
+    <div class="qra-loader">
+        <div class="qra-rotor" aria-label="Loading animation">
+            <div class="qra-box qra-box--one"></div>
+            <div class="qra-box qra-box--two"></div>
+        </div>
+        <div class="qra-loader-label">Loading QRAttend...</div>
+    </div>
+</div>
+<noscript>
+    <style>
+        body.page-loading > :not(.qra-loader-overlay) { visibility: visible; }
+        .qra-loader-overlay { display: none !important; }
+    </style>
+</noscript>
 
