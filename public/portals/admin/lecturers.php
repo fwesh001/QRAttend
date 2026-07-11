@@ -76,6 +76,12 @@ try {
                                    placeholder="name@fpn.edu.ng" required>
                         </div>
                         <div class="mb-3">
+                            <label for="password" class="form-label fw-semibold">Temporary Password</label>
+                            <input type="text" class="form-control" id="password" name="password"
+                                   placeholder="FedpoNas123! (default if blank)" autocomplete="new-password">
+                            <div class="form-text">Leave blank to use the secure default. Share this with the lecturer for first sign-in.</div>
+                        </div>
+                        <div class="mb-3">
                             <label for="department_id" class="form-label fw-semibold">Department</label>
                             <select class="form-select" id="department_id" name="department_id" required>
                                 <option value="" selected disabled>Select department…</option>
