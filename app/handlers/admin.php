@@ -192,6 +192,7 @@ function handleAddLecturer(): void
     $name    = trim((string) ($_POST['name'] ?? ''));
     $email   = trim((string) ($_POST['email'] ?? ''));
     $deptId  = filter_var($_POST['department_id'] ?? null, FILTER_VALIDATE_INT);
+    $rawPass = trim((string) ($_POST['password'] ?? ''));
 
     if ($staffNo === '' || $name === '' || $deptId === false || $deptId <= 0
         || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -202,8 +203,11 @@ function handleAddLecturer(): void
 
     try {
         $db = get_db();
-        $rawPass = 'FedpoNas123!';
-        $hash    = password_hash($rawPass, PASSWORD_BCRYPT);
+        // Use the submitted password, or the secure default when left blank.
+        if ($rawPass === '') {
+            $rawPass = 'FedpoNas123!';
+        }
+        $hash = password_hash($rawPass, PASSWORD_BCRYPT);
 
         $stmt = $db->prepare(
             'INSERT INTO lecturers (staff_no, name, email, password, department_id)
@@ -218,7 +222,7 @@ function handleAddLecturer(): void
             "Added/updated lecturer {$staffNo} ({$name})",
             get_client_ip()
         );
-        set_flash_message('success', "Lecturer '{$name}' saved successfully.");
+        set_flash_message('success', "Lecturer '{$name}' saved. Temporary password: {$rawPass}");
     } catch (RuntimeException $e) {
         set_flash_message('danger', 'Save failed: ' . $e->getMessage());
     } catch (PDOException $e) {
