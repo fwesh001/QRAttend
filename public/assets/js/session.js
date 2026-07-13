@@ -15,6 +15,8 @@
     const allocationId = root.dataset.allocationId;
     const pollUrl = root.dataset.pollUrl; // absolute path to app/handlers/session.php
     const apiBase = root.dataset.apiBase || '';
+    let chosenDuration = parseInt(root.dataset.defaultDuration || '15', 10);
+    if (isNaN(chosenDuration) || chosenDuration < 1) chosenDuration = 15;
 
     const elCountdown  = document.getElementById('countdown');
     const elCheckedIn  = document.getElementById('checked-in');
@@ -89,6 +91,7 @@
 
         const fd = new FormData();
         fd.append('allocation_id', allocationId);
+        fd.append('duration', chosenDuration);
 
         fetch(pollUrl, { method: 'POST', body: fd, cache: 'no-store' })
             .then(r => r.json())
@@ -160,6 +163,24 @@
                 }
             })
             .catch(err => console.error('Poll failed', err));
+    }
+
+    // ---- Duration modal wiring --------------------------------------------
+    const durationInput = document.getElementById('durationInput');
+    const applyBtn = document.getElementById('applyDurationBtn');
+    if (durationInput) durationInput.value = chosenDuration;
+    if (applyBtn && durationInput) {
+        applyBtn.addEventListener('click', () => {
+            const v = parseInt(durationInput.value, 10);
+            if (!isNaN(v) && v >= 1 && v <= 180) {
+                chosenDuration = v;
+                // If a session is already live, restart it with the new duration.
+                if (sessionId && !sessionClosed) {
+                    expiresAt = Math.floor(Date.now() / 1000) + chosenDuration * 60;
+                    tickCountdown();
+                }
+            }
+        });
     }
 
     // ---- Boot -------------------------------------------------------------
