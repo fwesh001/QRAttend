@@ -75,7 +75,8 @@ require_once __DIR__ . '/../../../app/layouts/navbar.php';
       data-session-id="<?= $existingSession ? (int) $existingSession['id'] : '' ?>"
       data-qr-token="<?= $existingSession ? sanitize_input($existingSession['qr_token']) : '' ?>"
       data-session-pin="<?= $existingSession ? sanitize_input($existingSession['session_pin']) : '' ?>"
-      data-expires-at="<?= $existingSession ? sanitize_input($existingSession['expires_at']) : '' ?>">
+      data-expires-at="<?= $existingSession ? sanitize_input($existingSession['expires_at']) : '' ?>"
+      data-default-duration="<?= (int) ($_SESSION['default_duration_minutes'] ?? SESSION_DEFAULT_MINUTES) ?>">
 
     <?= display_flash_message() ?>
 
@@ -110,6 +111,10 @@ require_once __DIR__ . '/../../../app/layouts/navbar.php';
                         <div class="small text-uppercase opacity-75 mb-1">Time Remaining</div>
                         <div id="countdown" class="display-1 fw-bold lh-1"
                              style="font-variant-numeric:tabular-nums;">--:--</div>
+                        <button type="button" class="btn btn-sm btn-light mt-2 fw-semibold"
+                                data-bs-toggle="modal" data-bs-target="#durationModal">
+                            <i class="bi bi-clock-history me-1"></i>Set Duration
+                        </button>
                     </div>
 
                     <!-- Live check-in counter -->
@@ -145,6 +150,32 @@ require_once __DIR__ . '/../../../app/layouts/navbar.php';
         </div>
     </div>
 </main>
+
+<!-- Duration modal (lecturer sets session length) -->
+<div class="modal fade" id="durationModal" tabindex="-1" aria-labelledby="durationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold" id="durationModalLabel">
+                    <i class="bi bi-clock-history me-1" style="color:var(--brand-primary);"></i>
+                    Session Duration
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <label for="durationInput" class="form-label fw-semibold">Minutes (1–180)</label>
+                <input type="number" class="form-control form-control-lg" id="durationInput"
+                       min="1" max="180" step="1" value="15">
+                <div class="form-text">This becomes your default for future sessions.</div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn text-white fw-semibold" id="applyDurationBtn"
+                        style="background-color:var(--brand-primary);" data-bs-dismiss="modal">Apply</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- QRCode rendering library (safe CDN) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
