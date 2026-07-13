@@ -120,9 +120,24 @@ function qrattend_base_url(): string
     if ($env !== '') {
         return rtrim($env, '/');
     }
-    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-        || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443 ? 'https' : 'http';
-    $host = $_SERVER['HTTP_HOST'] ?? ($_SERVER['SERVER_NAME'] ?? 'localhost');
+    
+    // Detect protocol, checking HTTPS and proxy headers
+    $scheme = 'http';
+    if ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443
+        || (strtolower($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')
+    ) {
+        $scheme = 'https';
+    }
+    
+    // Detect host, supporting proxy header if present
+    $host = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? ($_SERVER['HTTP_HOST'] ?? ($_SERVER['SERVER_NAME'] ?? 'localhost'));
+    // If multiple hosts are present in X-Forwarded-Host, use the first one
+    if (strpos($host, ',') !== false) {
+        $hosts = explode(',', $host);
+        $host = trim($hosts[0]);
+    }
+    
     $script = $_SERVER['SCRIPT_NAME'] ?? '';
     $pos = strpos($script, '/public/');
     $basePath = $pos !== false ? substr($script, 0, $pos + 7) : dirname($script);
