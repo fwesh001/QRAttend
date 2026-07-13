@@ -64,6 +64,7 @@ CREATE TABLE `lecturers` (
   `email`          VARCHAR(160) NOT NULL,
   `password`       VARCHAR(255) NOT NULL COMMENT 'bcrypt hash',
   `department_id`  INT UNSIGNED NOT NULL,
+  `default_duration_minutes` INT UNSIGNED NOT NULL DEFAULT 15 COMMENT 'lecturer preferred session length',
   `created_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_lecturers_staff_no` (`staff_no`),
