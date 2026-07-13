@@ -170,6 +170,7 @@ CREATE TABLE `lecturers` (
   `email` varchar(160) NOT NULL,
   `password` varchar(255) NOT NULL COMMENT 'bcrypt hash',
   `department_id` int(10) UNSIGNED NOT NULL,
+  `default_duration_minutes` int(10) UNSIGNED NOT NULL DEFAULT 15 COMMENT 'lecturer preferred session length',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
