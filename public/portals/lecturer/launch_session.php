@@ -76,7 +76,8 @@ require_once __DIR__ . '/../../../app/layouts/navbar.php';
       data-qr-token="<?= $existingSession ? sanitize_input($existingSession['qr_token']) : '' ?>"
       data-session-pin="<?= $existingSession ? sanitize_input($existingSession['session_pin']) : '' ?>"
       data-expires-at="<?= $existingSession ? sanitize_input($existingSession['expires_at']) : '' ?>"
-      data-default-duration="<?= (int) ($_SESSION['default_duration_minutes'] ?? SESSION_DEFAULT_MINUTES) ?>">
+      data-default-duration="<?= (int) ($_SESSION['default_duration_minutes'] ?? SESSION_DEFAULT_MINUTES) ?>"
+      data-started="<?= $existingSession ? '1' : '0' ?>">
 
     <?= display_flash_message() ?>
 
@@ -111,9 +112,9 @@ require_once __DIR__ . '/../../../app/layouts/navbar.php';
                         <div class="small text-uppercase opacity-75 mb-1">Time Remaining</div>
                         <div id="countdown" class="display-1 fw-bold lh-1"
                              style="font-variant-numeric:tabular-nums;">--:--</div>
-                        <button type="button" class="btn btn-sm btn-light mt-2 fw-semibold"
-                                data-bs-toggle="modal" data-bs-target="#durationModal">
-                            <i class="bi bi-clock-history me-1"></i>Set Duration
+                        <button type="button" class="btn btn-sm btn-light mt-2 fw-semibold d-none"
+                                id="editSessionBtn" data-bs-toggle="modal" data-bs-target="#sessionModal">
+                            <i class="bi bi-sliders me-1"></i>Edit Session
                         </button>
                     </div>
 
@@ -151,27 +152,37 @@ require_once __DIR__ . '/../../../app/layouts/navbar.php';
     </div>
 </main>
 
-<!-- Duration modal (lecturer sets session length) -->
-<div class="modal fade" id="durationModal" tabindex="-1" aria-labelledby="durationModalLabel" aria-hidden="true">
+<!-- Session setup modal (shown FIRST, before the session starts) -->
+<div class="modal fade" id="sessionModal" tabindex="-1" aria-labelledby="sessionModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-4 border-0 shadow">
             <div class="modal-header border-0">
-                <h5 class="modal-title fw-bold" id="durationModalLabel">
-                    <i class="bi bi-clock-history me-1" style="color:var(--brand-primary);"></i>
-                    Session Duration
+                <h5 class="modal-title fw-bold" id="sessionModalLabel">
+                    <i class="bi bi-sliders me-1" style="color:var(--brand-primary);"></i>
+                    Session Setup
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <label for="durationInput" class="form-label fw-semibold">Minutes (1–180)</label>
-                <input type="number" class="form-control form-control-lg" id="durationInput"
-                       min="1" max="180" step="1" value="15">
-                <div class="form-text">This becomes your default for future sessions.</div>
+                <div class="mb-3">
+                    <label for="maxStudentsInput" class="form-label fw-semibold">Max Students (class size)</label>
+                    <input type="number" class="form-control form-control-lg" id="maxStudentsInput"
+                           min="1" max="1000" step="1" placeholder="e.g. 45 (blank = unlimited)">
+                    <div class="form-text">Shown as "present / max" on the live counter.</div>
+                </div>
+                <div class="mb-2">
+                    <label for="durationInput" class="form-label fw-semibold">Duration (minutes, 1–180)</label>
+                    <input type="number" class="form-control form-control-lg" id="durationInput"
+                           min="1" max="180" step="1" value="15">
+                    <div class="form-text">This becomes your default for future sessions.</div>
+                </div>
             </div>
             <div class="modal-footer border-0">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn text-white fw-semibold" id="applyDurationBtn"
-                        style="background-color:var(--brand-primary);" data-bs-dismiss="modal">Apply</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="modalCancelBtn">Cancel</button>
+                <button type="button" class="btn text-white fw-semibold" id="startSessionBtn"
+                        style="background-color:var(--brand-primary);">
+                    <i class="bi bi-broadcast me-1"></i>Start Session
+                </button>
             </div>
         </div>
     </div>

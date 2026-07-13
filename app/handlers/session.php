@@ -54,6 +54,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['allocation_id'])) {
         $duration = null;
     }
 
+    // Optional max students (class size) for this session. Null = unlimited.
+    $maxStudents = filter_var($_POST['max_students'] ?? null, FILTER_VALIDATE_INT);
+    if ($maxStudents === false || $maxStudents < 1) {
+        $maxStudents = null;
+    }
+
     try {
         $db = get_db();
 
@@ -94,13 +100,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['allocation_id'])) {
 
         if ($existing !== false) {
             session_json([
-                'success'     => true,
-                'session_id'  => (int) $existing['id'],
-                'qr_token'    => $existing['qr_token'],
-                'session_pin' => $existing['session_pin'],
-                'expires_at'  => $existing['expires_at'],
-                'duration'    => (int) $existing['duration_minutes'],
-                'reused'      => true,
+                'success'       => true,
+                'session_id'    => (int) $existing['id'],
+                'qr_token'      => $existing['qr_token'],
+                'session_pin'   => $existing['session_pin'],
+                'expires_at'    => $existing['expires_at'],
+                'duration'      => (int) $existing['duration_minutes'],
+                'max_students' => $existing['max_students'] === null ? null : (int) $existing['max_students'],
+                'reused'        => true,
             ]);
         }
 
@@ -118,14 +125,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['allocation_id'])) {
 
         $ins = $db->prepare(
             'INSERT INTO attendance_sessions
-                (course_allocation_id, qr_token, session_pin, duration_minutes, status, expires_at)
-             VALUES (:alloc, :token, :pin, :dur, :status, :expires)'
+                (course_allocation_id, qr_token, session_pin, duration_minutes, max_students, status, expires_at)
+             VALUES (:alloc, :token, :pin, :dur, :max, :status, :expires)'
         );
         $ins->execute([
             ':alloc'   => $allocationId,
             ':token'   => $qrToken,
             ':pin'     => $sessionPin,
             ':dur'     => $duration,
+            ':max'     => $maxStudents,
             ':status'  => 'Open',
             ':expires' => $expiresAt,
         ]);
@@ -142,12 +150,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['allocation_id'])) {
         );
 
         session_json([
-            'success'     => true,
-            'session_id'  => $sessionId,
-            'qr_token'    => $qrToken,
-            'session_pin' => $sessionPin,
-            'expires_at'  => $expiresAt,
-            'duration'    => $duration,
+            'success'       => true,
+            'session_id'    => $sessionId,
+            'qr_token'      => $qrToken,
+            'session_pin'   => $sessionPin,
+            'expires_at'    => $expiresAt,
+            'duration'      => $duration,
+            'max_students' => $maxStudents === null ? null : (int) $maxStudents,
         ]);
     } catch (RuntimeException $e) {
         session_json(['success' => false, 'message' => $e->getMessage()], 500);

@@ -69,6 +69,7 @@ CREATE TABLE `attendance_sessions` (
   `qr_token` varchar(255) NOT NULL COMMENT 'cryptographic dynamic token',
   `session_pin` varchar(6) NOT NULL COMMENT '6-digit alphanumeric fallback pin',
   `duration_minutes` int(10) UNSIGNED NOT NULL DEFAULT 15,
+  `max_students` int(10) UNSIGNED NULL DEFAULT NULL COMMENT 'lecturer-set class size for this session',
   `status` enum('Open','Closed') NOT NULL DEFAULT 'Open',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `expires_at` datetime NOT NULL COMMENT 'created_at + duration_minutes'

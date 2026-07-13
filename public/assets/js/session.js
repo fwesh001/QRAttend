@@ -24,6 +24,13 @@
     const elPin        = document.getElementById('session-pin');
     const elQr         = document.getElementById('qrcode');
     const elExpired    = document.getElementById('expired-overlay');
+    const modalEl      = document.getElementById('sessionModal');
+    const startBtn     = document.getElementById('startSessionBtn');
+    const cancelBtn    = document.getElementById('modalCancelBtn');
+    const maxInput     = document.getElementById('maxStudentsInput');
+    const durationInput= document.getElementById('durationInput');
+    const editBtn      = document.getElementById('editSessionBtn');
+    let maxStudents = null;
 
     let sessionId   = null;
     let qrToken     = null;
@@ -72,7 +79,7 @@
     function initSession() {
         // If the page already carries an existing open session (e.g. the
         // lecturer returned to this screen), resume it without creating a
-        // duplicate. Otherwise POST to mint a fresh session.
+        // duplicate. Otherwise the setup modal opens FIRST (see boot).
         const existingId    = root.dataset.sessionId;
         const existingToken = root.dataset.qrToken;
         const existingExpiry = root.dataset.expiresAt;
@@ -83,15 +90,31 @@
             qrToken   = existingToken;
             expiresAt = Math.floor(new Date(existingExpiry.replace(' ', 'T')).getTime() / 1000);
             if (elPin) elPin.textContent = existingPin || '------';
+            if (editBtn) editBtn.classList.remove('d-none');
             renderQr(qrToken);
             startCountdown();
             startPolling();
             return;
         }
 
+        // No session yet -> show the setup modal before anything starts.
+        if (modalEl && window.bootstrap && window.bootstrap.Modal) {
+            const m = window.bootstrap.Modal.getOrCreateInstance(modalEl);
+            m.show();
+        }
+    }
+
+    // Start a brand-new session from the modal values.
+    function startSession() {
+        const dur = parseInt(durationInput ? durationInput.value : '15', 10);
+        if (!isNaN(dur) && dur >= 1 && dur <= 180) chosenDuration = dur;
+        const mx = parseInt(maxInput ? maxInput.value : '', 10);
+        maxStudents = (!isNaN(mx) && mx >= 1) ? mx : null;
+
         const fd = new FormData();
         fd.append('allocation_id', allocationId);
         fd.append('duration', chosenDuration);
+        fd.append('max_students', maxStudents === null ? '' : maxStudents);
 
         fetch(pollUrl, { method: 'POST', body: fd, cache: 'no-store' })
             .then(r => r.json())
@@ -103,7 +126,11 @@
                 sessionId  = data.session_id;
                 qrToken    = data.qr_token;
                 expiresAt  = Math.floor(new Date(data.expires_at.replace(' ', 'T')).getTime() / 1000);
+                if (typeof data.max_students !== 'undefined' && data.max_students !== null) {
+                    maxStudents = parseInt(data.max_students, 10);
+                }
                 if (elPin) elPin.textContent = data.session_pin || '------';
+                if (editBtn) editBtn.classList.remove('d-none');
 
                 renderQr(qrToken);
                 startCountdown();
@@ -147,8 +174,11 @@
                     return;
                 }
 
-                // Update live counter
+                // Update live counter (present / max)
                 if (elCheckedIn) elCheckedIn.textContent = data.checked_in;
+                if (elTotal) {
+                    elTotal.textContent = (maxStudents !== null) ? String(maxStudents) : '--';
+                }
 
                 // Sync expiry if backend reports it
                 if (data.status === 'Expired' || data.status === 'Closed') {
@@ -165,21 +195,26 @@
             .catch(err => console.error('Poll failed', err));
     }
 
-    // ---- Duration modal wiring --------------------------------------------
-    const durationInput = document.getElementById('durationInput');
-    const applyBtn = document.getElementById('applyDurationBtn');
+    // ---- Session setup modal wiring -----------------------------------
     if (durationInput) durationInput.value = chosenDuration;
-    if (applyBtn && durationInput) {
-        applyBtn.addEventListener('click', () => {
-            const v = parseInt(durationInput.value, 10);
-            if (!isNaN(v) && v >= 1 && v <= 180) {
-                chosenDuration = v;
-                // If a session is already live, restart it with the new duration.
-                if (sessionId && !sessionClosed) {
-                    expiresAt = Math.floor(Date.now() / 1000) + chosenDuration * 60;
-                    tickCountdown();
-                }
+    if (startBtn) {
+        startBtn.addEventListener('click', () => {
+            if (window.bootstrap && window.bootstrap.Modal && modalEl) {
+                window.bootstrap.Modal.getInstance(modalEl)?.hide();
             }
+            startSession();
+        });
+    }
+    if (cancelBtn && root.dataset.started === '0') {
+        // If no session exists, cancelling the setup returns to the dashboard.
+        cancelBtn.addEventListener('click', () => {
+            window.location.href = root.dataset.apiBase + '/portals/lecturer/dashboard.php';
+        });
+    }
+    if (editBtn) {
+        editBtn.addEventListener('click', () => {
+            if (maxInput && maxStudents !== null) maxInput.value = maxStudents;
+            if (durationInput) durationInput.value = chosenDuration;
         });
     }
 
