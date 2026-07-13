@@ -18,10 +18,15 @@ $pageTitle = INSTITUTION_SHORT . ' - Student Provisioning';
 require_once __DIR__ . '/../../../app/layouts/header.php';
 require_once __DIR__ . '/../../../app/layouts/navbar.php';
 
-// Live registry (latest 50 students with department name).
+// Live registry (latest 50 students with department name) + departments for the form.
 $students = [];
+$departments = [];
 try {
     $db = get_db();
+    $depStmt = $db->prepare('SELECT id, name FROM departments ORDER BY name ASC');
+    $depStmt->execute();
+    $departments = $depStmt->fetchAll(PDO::FETCH_ASSOC);
+
     $stmt = $db->prepare(
         'SELECT s.id, s.matric_no, s.name, s.level, s.email, d.name AS dept_name
          FROM students s
@@ -68,6 +73,57 @@ try {
                                 style="background-color:var(--brand-secondary);">
                             <i class="bi bi-upload me-1"></i> Import Students
                         </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Single student form -->
+            <div class="card border-0 shadow-sm rounded-4 mt-3">
+                <div class="card-header bg-white border-0 pt-3">
+                    <h2 class="h6 fw-bold mb-0">Add Single Student</h2>
+                </div>
+                <div class="card-body">
+                    <form action="../../handlers/admin_gateway.php" method="POST">
+                        <input type="hidden" name="action" value="add_student">
+
+                        <div class="mb-3">
+                            <label for="matric_no" class="form-label fw-semibold">Matric Number</label>
+                            <input type="text" class="form-control" id="matric_no" name="matric_no"
+                                   placeholder="CSC/HND/004" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="name" class="form-label fw-semibold">Full Name</label>
+                            <input type="text" class="form-control" id="name" name="name"
+                                   placeholder="Jane Doe" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="level" class="form-label fw-semibold">Level</label>
+                            <input type="text" class="form-control" id="level" name="level"
+                                   placeholder="HND II" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label fw-semibold">Email</label>
+                            <input type="email" class="form-control" id="email" name="email"
+                                   placeholder="jane.doe@qrattend.edu" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="department_id" class="form-label fw-semibold">Department</label>
+                            <select class="form-select" id="department_id" name="department_id" required>
+                                <option value="" selected disabled>Select department…</option>
+                                <?php foreach ($departments as $dep): ?>
+                                    <option value="<?= (int) $dep['id'] ?>">
+                                        <?= sanitize_input($dep['name']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <button type="submit"
+                                class="btn w-100 py-2 fw-bold text-white"
+                                style="background-color:var(--brand-primary);">
+                            <i class="bi bi-person-plus me-1"></i> Add Student
+                        </button>
+                        <div class="form-text">Default password is <code>password123</code>.</div>
                     </form>
                 </div>
             </div>
