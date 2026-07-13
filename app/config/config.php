@@ -109,8 +109,26 @@ define('APP_DEBUG', APP_ENV === 'development');
 define('APP_TIMEZONE', 'Africa/Lagos');
 date_default_timezone_set(APP_TIMEZONE);
 
-// Base application URL (used for absolute links / redirects)
-define('APP_URL', qrattend_env('APP_URL', 'http://localhost/QRAttend/public'));
+// Base application URL (used for absolute links / redirects).
+// Prefer an explicit APP_URL env var; otherwise auto-detect from the current
+// request so the app works on any host (localhost, onrender, etc.) without
+// manual configuration. The web root is the "public" directory, so we strip
+// everything after "/public" from the script path.
+function qrattend_base_url(): string
+{
+    $env = qrattend_env('APP_URL', '');
+    if ($env !== '') {
+        return rtrim($env, '/');
+    }
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443 ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? ($_SERVER['SERVER_NAME'] ?? 'localhost');
+    $script = $_SERVER['SCRIPT_NAME'] ?? '';
+    $pos = strpos($script, '/public/');
+    $basePath = $pos !== false ? substr($script, 0, $pos + 7) : dirname($script);
+    return $scheme . '://' . $host . rtrim($basePath, '/');
+}
+define('APP_URL', qrattend_base_url());
 
 // Path constants (absolute, filesystem-safe)
 define('ROOT_PATH',   __DIR__ . '/../..');
