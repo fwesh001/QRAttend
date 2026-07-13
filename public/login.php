@@ -43,9 +43,25 @@ require_once __DIR__ . '/../app/layouts/navbar.php';
                 </div>
 
                 <div class="card-body p-4">
-                    <h2 class="h6 text-center text-uppercase letter-spacing-1 mb-4 text-muted">
+                    <h2 class="h6 text-center text-uppercase letter-spacing-1 mb-3 text-muted">
                         Sign In
                     </h2>
+
+                    <!-- Role hint (auth auto-detects the role from your identity) -->
+                    <div class="d-flex justify-content-center gap-2 mb-4 flex-wrap">
+                        <span class="badge rounded-pill text-white" style="background-color:var(--brand-primary);">
+                            <i class="bi bi-shield-lock me-1"></i>Admin
+                        </span>
+                        <span class="badge rounded-pill text-white" style="background-color:var(--brand-secondary);">
+                            <i class="bi bi-person-video3 me-1"></i>Lecturer
+                        </span>
+                        <span class="badge rounded-pill text-white" style="background-color:var(--brand-success);">
+                            <i class="bi bi-mortarboard me-1"></i>Student
+                        </span>
+                    </div>
+                    <p class="text-center small text-muted mb-4">
+                        Your role is detected automatically — just sign in with your credentials.
+                    </p>
 
                     <form action="auth.php" method="POST" novalidate>
 
