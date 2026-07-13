@@ -12,6 +12,15 @@
                 &copy; <?= date('Y') ?> <?= sanitize_input(INSTITUTION_NAME) ?> &middot;
                 <?= sanitize_input(INSTITUTION_DEPT) ?>
             </small>
+            <div class="mt-1">
+                <small class="text-muted">
+                    Developed by
+                    <a href="https://www.zabdiel.tech" target="_blank" rel="noopener noreferrer"
+                       class="fw-semibold text-decoration-none" style="color:var(--brand-primary);">
+                        Dev.ZABDIEL
+                    </a>
+                </small>
+            </div>
         </div>
     </footer>
 
