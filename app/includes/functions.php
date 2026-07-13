@@ -129,10 +129,14 @@ function display_flash_message(): string
     // Clear so it shows only once
     unset($_SESSION['flash']);
 
+    // Wrapped in a toast region so main.js can relocate it to the
+    // bottom-right (large) / bottom-center (small) overlay corner.
     return <<<HTML
-<div class="alert alert-{$type} alert-dismissible fade show" role="alert">
-    {$text}
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+<div class="qra-toast-region">
+    <div class="alert alert-{$type} alert-dismissible fade show mb-0 shadow" role="alert">
+        {$text}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
 </div>
 HTML;
 }

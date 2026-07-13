@@ -43,60 +43,74 @@ require_once __DIR__ . '/../app/layouts/navbar.php';
                 </div>
 
                 <div class="card-body p-4">
-                    <h2 class="h6 text-center text-uppercase letter-spacing-1 mb-3 text-muted">
-                        Sign In
-                    </h2>
 
-                    <!-- Role hint (auth auto-detects the role from your identity) -->
-                    <div class="d-flex justify-content-center gap-2 mb-4 flex-wrap">
-                        <span class="badge rounded-pill text-white" style="background-color:var(--brand-primary);">
-                            <i class="bi bi-shield-lock me-1"></i>Admin
-                        </span>
-                        <span class="badge rounded-pill text-white" style="background-color:var(--brand-secondary);">
-                            <i class="bi bi-person-video3 me-1"></i>Lecturer
-                        </span>
-                        <span class="badge rounded-pill text-white" style="background-color:var(--brand-success);">
-                            <i class="bi bi-mortarboard me-1"></i>Student
-                        </span>
+                    <!-- STEP 1: role selection -->
+                    <div id="role-step">
+                        <h2 class="h6 text-center text-uppercase letter-spacing-1 mb-2 text-muted">
+                            Choose Your Role
+                        </h2>
+                        <p class="text-center small text-muted mb-4">
+                            Your account is detected automatically after you sign in.
+                        </p>
+
+                        <div class="d-grid gap-2 mb-2">
+                            <button type="button" class="btn btn-role" data-role="admin">
+                                <i class="bi bi-shield-lock me-2"></i>Administrator
+                            </button>
+                            <button type="button" class="btn btn-role" data-role="lecturer">
+                                <i class="bi bi-person-video3 me-2"></i>Lecturer
+                            </button>
+                            <button type="button" class="btn btn-role" data-role="student">
+                                <i class="bi bi-mortarboard me-2"></i>Student
+                            </button>
+                        </div>
                     </div>
-                    <p class="text-center small text-muted mb-4">
-                        Your role is detected automatically — just sign in with your credentials.
-                    </p>
 
-                    <form action="auth.php" method="POST" novalidate>
-
-                        <!-- Identity -->
-                        <div class="mb-3">
-                            <label for="identity" class="form-label fw-semibold">Identity</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-white">
-                                    <i class="bi bi-person-badge text-muted"></i>
-                                </span>
-                                <input type="text" class="form-control" id="identity" name="identity"
-                                       placeholder="Enter Username, Email, Staff No, or Matric No"
-                                       autocomplete="username" required>
-                            </div>
+                    <!-- STEP 2: credentials (hidden until a role is picked) -->
+                    <div id="form-step" class="d-none">
+                        <div class="d-flex align-items-center mb-3">
+                            <button type="button" id="role-back" class="btn btn-sm btn-outline-secondary me-2">
+                                <i class="bi bi-arrow-left me-1"></i>Back
+                            </button>
+                            <span id="role-label" class="badge rounded-pill text-white mb-0"></span>
                         </div>
 
-                        <!-- Password -->
-                        <div class="mb-3">
-                            <label for="password" class="form-label fw-semibold">Password</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-white">
-                                    <i class="bi bi-lock text-muted"></i>
-                                </span>
-                                <input type="password" class="form-control" id="password" name="password"
-                                       placeholder="Enter Password" autocomplete="current-password" required>
-                            </div>
-                        </div>
+                        <form action="auth.php" method="POST" novalidate>
+                            <input type="hidden" name="role_hint" id="role-hint" value="">
 
-                        <!-- Submit -->
-                        <button type="submit"
-                                class="btn w-100 py-2 fw-bold text-white"
-                                style="background-color:var(--brand-primary);">
-                            <i class="bi bi-box-arrow-in-right me-1"></i>Login
-                        </button>
-                    </form>
+                            <!-- Identity -->
+                            <div class="mb-3">
+                                <label for="identity" class="form-label fw-semibold">Identity</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white">
+                                        <i class="bi bi-person-badge text-muted"></i>
+                                    </span>
+                                    <input type="text" class="form-control" id="identity" name="identity"
+                                           placeholder="Enter Username, Email, Staff No, or Matric No"
+                                           autocomplete="username" required>
+                                </div>
+                            </div>
+
+                            <!-- Password -->
+                            <div class="mb-3">
+                                <label for="password" class="form-label fw-semibold">Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white">
+                                        <i class="bi bi-lock text-muted"></i>
+                                    </span>
+                                    <input type="password" class="form-control" id="password" name="password"
+                                           placeholder="Enter Password" autocomplete="current-password" required>
+                                </div>
+                            </div>
+
+                            <!-- Submit -->
+                            <button type="submit"
+                                    class="btn w-100 py-2 fw-bold text-white"
+                                    style="background-color:var(--brand-primary);">
+                                <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                            </button>
+                        </form>
+                    </div>
                 </div>
 
                 <div class="card-footer bg-white border-0 text-center py-3">
@@ -109,6 +123,45 @@ require_once __DIR__ . '/../app/layouts/navbar.php';
         </div>
     </div>
 </main>
+
+<script>
+(function () {
+    'use strict';
+    const roleStep  = document.getElementById('role-step');
+    const formStep  = document.getElementById('form-step');
+    const roleLabel = document.getElementById('role-label');
+    const roleHint  = document.getElementById('role-hint');
+    const backBtn   = document.getElementById('role-back');
+    if (!roleStep || !formStep) return;
+
+    const meta = {
+        admin:    { label: 'Administrator', color: 'var(--brand-primary)' },
+        lecturer: { label: 'Lecturer',     color: 'var(--brand-secondary)' },
+        student:  { label: 'Student',      color: 'var(--brand-success)' }
+    };
+
+    document.querySelectorAll('.btn-role').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const role = btn.dataset.role;
+            roleStep.classList.add('d-none');
+            formStep.classList.remove('d-none');
+            roleLabel.textContent = meta[role].label;
+            roleLabel.style.backgroundColor = meta[role].color;
+            roleHint.value = role;
+            const id = document.getElementById('identity');
+            if (id) id.focus();
+        });
+    });
+
+    if (backBtn) {
+        backBtn.addEventListener('click', () => {
+            formStep.classList.add('d-none');
+            roleStep.classList.remove('d-none');
+            roleHint.value = '';
+        });
+    }
+})();
+</script>
 
 <?php
 require_once __DIR__ . '/../app/layouts/footer.php';
