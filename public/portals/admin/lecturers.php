@@ -121,6 +121,7 @@ try {
                                     <th>Name</th>
                                     <th>Email</th>
                                     <th>Department</th>
+                                    <th class="text-end">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -137,6 +138,17 @@ try {
                                             <td><?= sanitize_input($lec['name']) ?></td>
                                             <td class="small text-muted"><?= sanitize_input($lec['email']) ?></td>
                                             <td><?= sanitize_input($lec['dept_name'] ?? '—') ?></td>
+                                            <td class="text-end">
+                                                <form action="../../handlers/admin_gateway.php" method="POST"
+                                                      onsubmit="return confirm('Delete lecturer <?= sanitize_input($lec['staff_no']) ?>? This cannot be undone.');">
+                                                    <input type="hidden" name="action" value="delete_user">
+                                                    <input type="hidden" name="user_type" value="lecturer">
+                                                    <input type="hidden" name="user_id" value="<?= (int) $lec['id'] ?>">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>

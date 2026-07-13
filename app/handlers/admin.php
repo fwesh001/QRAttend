@@ -50,6 +50,10 @@ switch ($action) {
         handlePurgeLogs();
         break;
 
+    case 'delete_user':
+        handleDeleteUser();
+        break;
+
     default:
         set_flash_message('danger', 'Unknown administrative action.');
         header('Location: ' . APP_URL . '/portals/admin/students.php');
@@ -136,8 +140,8 @@ function handleBulkImportStudents(): void
                 continue;
             }
 
-            // 4b. Secure randomized default password + bcrypt hash.
-            $rawPass = 'FedpoNas123!';
+            // 4b. Default password + bcrypt hash.
+            $rawPass = 'password123';
             $hash    = password_hash($rawPass, PASSWORD_BCRYPT);
 
             $stmt->execute([
@@ -203,9 +207,9 @@ function handleAddLecturer(): void
 
     try {
         $db = get_db();
-        // Use the submitted password, or the secure default when left blank.
+        // Use the submitted password, or the default when left blank.
         if ($rawPass === '') {
-            $rawPass = 'FedpoNas123!';
+            $rawPass = 'password123';
         }
         $hash = password_hash($rawPass, PASSWORD_BCRYPT);
 
@@ -363,6 +367,56 @@ function handlePurgeLogs(): void
     }
 
     header('Location: ' . APP_URL . '/portals/admin/backup.php');
+    exit;
+}
+
+/**
+ * Delete a user (student or lecturer) by type + id.
+ * Admins cannot delete themselves or other administrators.
+ */
+function handleDeleteUser(): void
+{
+    $type = trim((string) ($_POST['user_type'] ?? ''));
+    $id   = filter_var($_POST['user_id'] ?? null, FILTER_VALIDATE_INT);
+
+    $allowed = ['student' => 'students', 'lecturer' => 'lecturers'];
+    if (!isset($allowed[$type]) || $id === false || $id <= 0) {
+        set_flash_message('danger', 'Invalid user reference for deletion.');
+        header('Location: ' . APP_URL . '/portals/admin/students.php');
+        exit;
+    }
+
+    // Safety: never allow an admin to delete their own account.
+    if ($type === 'admin' || (int) ($_SESSION['user_id'] ?? 0) === $id) {
+        set_flash_message('danger', 'You cannot delete this account.');
+        header('Location: ' . APP_URL . '/portals/admin/students.php');
+        exit;
+    }
+
+    try {
+        $db = get_db();
+        $table = $allowed[$type];
+        $stmt = $db->prepare("DELETE FROM `{$table}` WHERE id = ? LIMIT 1");
+        $stmt->execute([$id]);
+
+        if ($stmt->rowCount() === 0) {
+            set_flash_message('warning', 'No matching user was found to delete.');
+        } else {
+            log_activity(
+                $db, 'admin', (int) $_SESSION['user_id'],
+                "Deleted {$type} #{$id}",
+                get_client_ip()
+            );
+            set_flash_message('success', ucfirst($type) . ' deleted successfully.');
+        }
+    } catch (RuntimeException $e) {
+        set_flash_message('danger', 'Delete failed: ' . $e->getMessage());
+    } catch (PDOException $e) {
+        error_log('[QRAttend] delete user error: ' . $e->getMessage());
+        set_flash_message('danger', 'Delete failed: a database error occurred.');
+    }
+
+    header('Location: ' . APP_URL . '/portals/admin/' . ($type === 'lecturer' ? 'lecturers.php' : 'students.php'));
     exit;
 }
 
