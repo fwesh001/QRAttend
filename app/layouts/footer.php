@@ -17,7 +17,7 @@
                     Developed by
                     <a href="https://www.zabdiel.tech" target="_blank" rel="noopener noreferrer"
                        class="fw-semibold text-decoration-none" style="color:var(--brand-primary);">
-                        Dev.ZABDIEL
+                        ZABDIEL
                     </a>
                 </small>
             </div>
