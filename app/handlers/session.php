@@ -118,25 +118,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['allocation_id'])) {
         $expiresAt = date('Y-m-d H:i:s', time() + $duration * 60);
 
         // Persist this duration as the lecturer's new default for next time.
-        $upd = $db->prepare(
-            'UPDATE lecturers SET default_duration_minutes = :dur WHERE id = :lid'
-        );
-        $upd->execute([':dur' => $duration, ':lid' => (int) $_SESSION['user_id']]);
+        // Guarded so a missing column (migration not yet run) can't block the start.
+        try {
+            $upd = $db->prepare(
+                'UPDATE lecturers SET default_duration_minutes = :dur WHERE id = :lid'
+            );
+            $upd->execute([':dur' => $duration, ':lid' => (int) $_SESSION['user_id']]);
+        } catch (PDOException $e) {
+            // Column likely absent on a not-yet-migrated DB; ignore and continue.
+            error_log('[QRAttend] skip default_duration_minutes update: ' . $e->getMessage());
+        }
 
-        $ins = $db->prepare(
-            'INSERT INTO attendance_sessions
-                (course_allocation_id, qr_token, session_pin, duration_minutes, max_students, status, expires_at)
-             VALUES (:alloc, :token, :pin, :dur, :max, :status, :expires)'
-        );
-        $ins->execute([
+        // Build the INSERT adaptively so a not-yet-migrated DB (missing
+        // max_students column) still lets the session start.
+        $cols = ['course_allocation_id', 'qr_token', 'session_pin', 'duration_minutes', 'status', 'expires_at'];
+        $vals = [':alloc', ':token', ':pin', ':dur', ':status', ':expires'];
+        $params = [
             ':alloc'   => $allocationId,
             ':token'   => $qrToken,
             ':pin'     => $sessionPin,
             ':dur'     => $duration,
-            ':max'     => $maxStudents,
             ':status'  => 'Open',
             ':expires' => $expiresAt,
-        ]);
+        ];
+        // Probe for the max_students column; include it only if present.
+        $hasMax = false;
+        try {
+            $probe = $db->query("SHOW COLUMNS FROM attendance_sessions LIKE 'max_students'");
+            $hasMax = $probe !== false && $probe->rowCount() > 0;
+        } catch (PDOException $e) {
+            $hasMax = false;
+        }
+        if ($hasMax) {
+            $cols[] = 'max_students';
+            $vals[] = ':max';
+            $params[':max'] = $maxStudents;
+        }
+
+        $ins = $db->prepare(
+            'INSERT INTO attendance_sessions (' . implode(', ', $cols) . ')
+             VALUES (' . implode(', ', $vals) . ')'
+        );
+        $ins->execute($params);
 
         $sessionId = (int) $db->lastInsertId();
 
