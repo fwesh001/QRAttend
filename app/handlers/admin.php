@@ -38,6 +38,10 @@ switch ($action) {
         handleAddLecturer();
         break;
 
+    case 'add_student':
+        handleAddStudent();
+        break;
+
     case 'add_course':
         handleAddCourse();
         break;
@@ -235,6 +239,57 @@ function handleAddLecturer(): void
     }
 
     header('Location: ' . APP_URL . '/portals/admin/lecturers.php');
+    exit;
+}
+
+/**
+ * Add a single student with the default password (password123, bcrypt-hashed).
+ */
+function handleAddStudent(): void
+{
+    $matricNo = trim((string) ($_POST['matric_no'] ?? ''));
+    $name     = trim((string) ($_POST['name'] ?? ''));
+    $level    = trim((string) ($_POST['level'] ?? ''));
+    $email    = trim((string) ($_POST['email'] ?? ''));
+    $deptId   = filter_var($_POST['department_id'] ?? null, FILTER_VALIDATE_INT);
+
+    if ($matricNo === '' || $name === '' || $level === '' || $deptId === false || $deptId <= 0
+        || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        set_flash_message('danger', 'Please complete all student fields with valid values.');
+        header('Location: ' . APP_URL . '/portals/admin/students.php');
+        exit;
+    }
+
+    try {
+        $db = get_db();
+        $rawPass = 'password123';
+        $hash    = password_hash($rawPass, PASSWORD_BCRYPT);
+
+        $stmt = $db->prepare(
+            'INSERT INTO students (matric_no, name, level, email, department_id, password)
+             VALUES (?, ?, ?, ?, ?, ?)'
+        );
+        $stmt->execute([$matricNo, $name, $level, $email, $deptId, $hash]);
+
+        log_activity(
+            $db, 'admin', (int) $_SESSION['user_id'],
+            "Added student {$matricNo} ({$name})",
+            get_client_ip()
+        );
+        set_flash_message('success', "Student '{$name}' added. Default password: password123");
+    } catch (RuntimeException $e) {
+        set_flash_message('danger', 'Save failed: ' . $e->getMessage());
+    } catch (PDOException $e) {
+        // 23000 = duplicate matric/email
+        if ($e->getCode() === '23000') {
+            set_flash_message('warning', 'A student with that matric number or email already exists.');
+        } else {
+            error_log('[QRAttend] add student error: ' . $e->getMessage());
+            set_flash_message('danger', 'Save failed: a database error occurred.');
+        }
+    }
+
+    header('Location: ' . APP_URL . '/portals/admin/students.php');
     exit;
 }
 
