@@ -47,6 +47,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['allocation_id'])) {
         session_json(['success' => false, 'message' => 'Invalid allocation.'], 400);
     }
 
+    // Optional session duration (minutes). Falls back to the lecturer's saved
+    // default, then the global constant. Clamped to a sane 1-180 range.
+    $duration = filter_var($_POST['duration'] ?? null, FILTER_VALIDATE_INT);
+    if ($duration === false || $duration < 1 || $duration > 180) {
+        $duration = null;
+    }
+
     try {
         $db = get_db();
 
@@ -60,6 +67,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['allocation_id'])) {
         ]);
         if ($ownStmt->fetch() === false) {
             session_json(['success' => false, 'message' => 'Allocation not owned by lecturer.'], 403);
+        }
+
+        // Resolve the effective duration: explicit request -> lecturer default -> constant.
+        if ($duration === null) {
+            $defStmt = $db->prepare(
+                'SELECT default_duration_minutes FROM lecturers WHERE id = :lid'
+            );
+            $defStmt->execute([':lid' => (int) $_SESSION['user_id']]);
+            $duration = (int) ($defStmt->fetchColumn() ?: SESSION_DEFAULT_MINUTES);
         }
 
         // Reuse an existing OPEN, non-expired session for this allocation so
@@ -92,8 +108,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['allocation_id'])) {
         $qrToken = bin2hex(random_bytes(16));               // 32-char hex
         $sessionPin = (string) random_int(100000, 999999);  // 6-digit backup pin
 
-        $duration = (int) SESSION_DEFAULT_MINUTES;          // 15 (config constant)
         $expiresAt = date('Y-m-d H:i:s', time() + $duration * 60);
+
+        // Persist this duration as the lecturer's new default for next time.
+        $upd = $db->prepare(
+            'UPDATE lecturers SET default_duration_minutes = :dur WHERE id = :lid'
+        );
+        $upd->execute([':dur' => $duration, ':lid' => (int) $_SESSION['user_id']]);
 
         $ins = $db->prepare(
             'INSERT INTO attendance_sessions
@@ -110,6 +131,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['allocation_id'])) {
         ]);
 
         $sessionId = (int) $db->lastInsertId();
+
+        // Refresh the lecturer's default in-session so the modal pre-fills next time.
+        $_SESSION['default_duration_minutes'] = $duration;
 
         log_activity(
             $db, 'lecturer', (int) $_SESSION['user_id'],
